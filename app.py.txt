@@ -1,26 +1,41 @@
+import os
+import requests
 from flask import Flask, request, jsonify
-import google.generativeai as genai
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # Allow frontend to call backend
+CORS(app)
 
-# Configure Google Gemini API
-genai.configure(api_key="YOUR_GEMINI_API_KEY")
+# Get API key from environment variables
+AIML_API_KEY = os.getenv("AIML_API_KEY")
+AIML_API_URL = "https://aimlapi.com/api/v1/generate"  # Change this if needed
 
 @app.route("/chat", methods=["POST"])
 def chat():
     data = request.json
-    person = data.get("person", "Osho")
-    user_message = data.get("message", "")
+    user_input = data.get("message", "")
 
-    # Set up AI model
-    model = genai.GenerativeModel("gemini-pro")
-    
-    prompt = f"You are {person}. Answer the following in {person}'s tone:\n\n{user_message}"
-    
-    response = model.generate_content(prompt)
-    return jsonify({"reply": response.text})
+    # Send request to AIMLAPI
+    headers = {
+        "Authorization": f"Bearer {AIML_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "text": user_input
+    }
+
+    try:
+        response = requests.post(AIML_API_URL, json=payload, headers=headers)
+        response_data = response.json()
+
+        # Extract AI response (modify based on AIMLAPI response format)
+        ai_response = response_data.get("response", "Sorry, I couldn't understand that.")
+
+        return jsonify({"message": ai_response})
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 if __name__ == "__main__":
     app.run(debug=True)
+
