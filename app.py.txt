@@ -1,0 +1,26 @@
+from flask import Flask, request, jsonify
+import google.generativeai as genai
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)  # Allow frontend to call backend
+
+# Configure Google Gemini API
+genai.configure(api_key="YOUR_GEMINI_API_KEY")
+
+@app.route("/chat", methods=["POST"])
+def chat():
+    data = request.json
+    person = data.get("person", "Osho")
+    user_message = data.get("message", "")
+
+    # Set up AI model
+    model = genai.GenerativeModel("gemini-pro")
+    
+    prompt = f"You are {person}. Answer the following in {person}'s tone:\n\n{user_message}"
+    
+    response = model.generate_content(prompt)
+    return jsonify({"reply": response.text})
+
+if __name__ == "__main__":
+    app.run(debug=True)
